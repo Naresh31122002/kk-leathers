@@ -1,0 +1,11 @@
+import { chromium } from "playwright";
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const b = await chromium.launch();
+const ctx = await b.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: "no-preference" });
+const p = await ctx.newPage();
+await p.goto(process.env.QA_URL || "http://localhost:3254", { waitUntil: "networkidle" });
+await sleep(4000);
+await p.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+await sleep(2500);
+await p.screenshot({ path: "qa/shots/dwell-footer.png" });
+await b.close();
