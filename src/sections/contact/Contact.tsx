@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MapPin, Clock, Mail, Phone, Check } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Section from "@/components/layout/Section";
 import SectionHeading from "@/components/ui/SectionHeading";
 import Reveal from "@/components/anim/Reveal";
@@ -13,16 +14,24 @@ import ContactField from "./ContactField";
 type Errors = { name?: string; email?: string; message?: string };
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/**
- * Contact (doc 09 Phase 13) — a validated enquiry form with floating-label
- * premium fields, brand info, and a location panel that plays the packaging
- * film behind it (integrates the packaging-process asset). Client-side submit
- * with a graceful confirmation (no backend wired).
- */
+type InfoItem = {
+  Icon: LucideIcon;
+  label: string;
+  text: string;
+  href?: string;
+};
+
+const infoItems: InfoItem[] = [
+  { Icon: MapPin, label: "Address", text: site.address },
+  { Icon: Clock,  label: "Hours",   text: site.hours },
+  { Icon: Mail,   label: "Email",   text: site.email,  href: `mailto:${site.email}` },
+  { Icon: Phone,  label: "Phone",   text: site.phone,  href: `tel:${site.phone}` },
+];
+
 export default function Contact() {
   const [values, setValues] = useState({ name: "", email: "", message: "" });
   const [errors, setErrors] = useState<Errors>({});
-  const [sent, setSent] = useState(false);
+  const [sent,   setSent]   = useState(false);
 
   const set = (k: keyof typeof values) => (v: string) =>
     setValues((prev) => ({ ...prev, [k]: v }));
@@ -48,16 +57,17 @@ export default function Contact() {
 
   return (
     <Section id="contact" tone="raised" className="grain">
-      {/* Hidden waypoint (order 70): the shoe stays invisible through the whole
-          Business→Contact stretch, re-emerging only for the footer finale. */}
+      {/* Hidden waypoint — shoe stays invisible through this stretch */}
       <ShoeStage
         order={70}
         pose={{ width: 120, opacity: 0, glow: 0 }}
         className="pointer-events-none absolute left-1/2 top-1/2 h-2 w-2"
         aria-label=""
       />
-      <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16">
-        {/* Left: info + location film */}
+
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-20">
+
+        {/* Left — brand info + location panel */}
         <div>
           <SectionHeading
             index="08"
@@ -67,39 +77,49 @@ export default function Contact() {
             className="mb-10"
           />
 
-          <Reveal y={20}>
+          <Reveal y={18}>
             <ul className="flex flex-col gap-5 text-small text-text-secondary">
-              <li className="flex items-start gap-4">
-                <MapPin className="mt-1 shrink-0 text-gold" size={20} />
-                <span>{site.address}</span>
-              </li>
-              <li className="flex items-start gap-4">
-                <Clock className="mt-1 shrink-0 text-gold" size={20} />
-                <span>{site.hours}</span>
-              </li>
-              <li className="flex items-start gap-4">
-                <Mail className="mt-1 shrink-0 text-gold" size={20} />
-                <a href={`mailto:${site.email}`} className="hover:text-text-primary">
-                  {site.email}
-                </a>
-              </li>
-              <li className="flex items-start gap-4">
-                <Phone className="mt-1 shrink-0 text-gold" size={20} />
-                <a href={`tel:${site.phone}`} className="hover:text-text-primary">
-                  {site.phone}
-                </a>
-              </li>
+              {infoItems.map(({ Icon, label, text, href }) => (
+                <li key={label} className="flex items-start gap-4">
+                  <Icon
+                    className="mt-[3px] shrink-0 text-gold"
+                    size={18}
+                    strokeWidth={1.5}
+                    aria-hidden
+                  />
+                  {href ? (
+                    <a
+                      href={href}
+                      className="transition-colors duration-200 hover:text-text-primary"
+                    >
+                      {text}
+                    </a>
+                  ) : (
+                    <span>{text}</span>
+                  )}
+                </li>
+              ))}
             </ul>
           </Reveal>
 
-          {/* Location panel — a quiet, warm atelier plate (no product film) */}
-          <Reveal y={24} delay={0.1}>
-            <div className="mt-10 overflow-hidden rounded-card border border-white/[0.08]">
-              <div className="relative flex h-[220px] items-center justify-center bg-[radial-gradient(120%_120%_at_50%_0%,rgba(123,74,36,0.22),transparent_60%),linear-gradient(180deg,#161210,#0a0a0a)]">
-                <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[length:44px_44px] [mask-image:radial-gradient(ellipse_at_center,#000_40%,transparent_75%)]" />
-                <div className="relative flex flex-col items-center gap-2 text-center">
-                  <MapPin className="text-gold" size={30} />
-                  <p className="font-display text-card-title">The Leather Atelier</p>
+          {/* Location decorative panel */}
+          <Reveal y={22} delay={0.1}>
+            <div className="mt-10 overflow-hidden rounded-card border border-white/[0.07]">
+              <div
+                className="relative flex h-[200px] items-center justify-center"
+                style={{
+                  background:
+                    "radial-gradient(120% 120% at 50% 0%, rgba(123,74,36,0.22), transparent 60%)," +
+                    "linear-gradient(180deg, #181210, #0c0a09)",
+                }}
+              >
+                {/* Subtle grid */}
+                <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[length:48px_48px] [mask-image:radial-gradient(ellipse_at_center,#000_35%,transparent_72%)]" />
+                <div className="relative flex flex-col items-center gap-[6px] text-center">
+                  <MapPin className="text-gold/80" size={28} strokeWidth={1.4} aria-hidden />
+                  <p className="font-display text-[20px] font-semibold text-text-primary">
+                    The Leather Atelier
+                  </p>
                   <p className="text-caption text-text-muted">Chennai, India</p>
                 </div>
               </div>
@@ -107,21 +127,24 @@ export default function Contact() {
           </Reveal>
         </div>
 
-        {/* Right: form — no shoe here; the enquiry is the focus. */}
-        <Reveal y={26} delay={0.1} className="relative">
+        {/* Right — form */}
+        <Reveal y={24} delay={0.1} className="relative">
           {sent ? (
-            <div className="flex h-full min-h-[360px] flex-col items-center justify-center rounded-card border border-success/30 bg-surface p-10 text-center">
-              <span className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-success/15">
-                <Check className="text-success" size={28} />
+            <div
+              className="flex h-full min-h-[360px] flex-col items-center justify-center
+                rounded-card border border-success/25 bg-surface p-10 text-center
+                shadow-[0_8px_24px_rgba(0,0,0,.22)]"
+            >
+              <span className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-success/12">
+                <Check className="text-success" size={26} strokeWidth={1.6} />
               </span>
-              <h3 className="font-display text-subheading">Thank you</h3>
-              <p className="mt-3 max-w-[36ch] text-small text-text-secondary">
-                Your enquiry has reached us. We&apos;ll be in touch personally,
-                very soon.
+              <h3 className="font-display text-subheading font-semibold">Thank you</h3>
+              <p className="mt-3 max-w-[34ch] text-small text-text-secondary">
+                Your enquiry has reached us. We&apos;ll be in touch personally, very soon.
               </p>
               <button
                 onClick={() => setSent(false)}
-                className="mt-8 text-caption uppercase tracking-[0.18em] text-gold hover:text-text-primary"
+                className="mt-8 text-[11px] uppercase tracking-[0.20em] text-gold transition-colors hover:text-text-primary"
               >
                 Send another
               </button>
@@ -130,7 +153,10 @@ export default function Contact() {
             <form
               onSubmit={onSubmit}
               noValidate
-              className="flex flex-col gap-6 rounded-card border border-white/[0.08] bg-surface p-8 sm:p-10"
+              className="flex flex-col gap-5
+                rounded-card border border-white/[0.07]
+                bg-surface p-8 sm:p-10
+                shadow-[0_2px_4px_rgba(0,0,0,.14),0_8px_24px_rgba(0,0,0,.22)]"
             >
               <ContactField
                 id="name"

@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import Magnetic from "@/components/anim/Magnetic";
 import { cn } from "@/lib/cn";
 
-type Variant = "primary" | "secondary";
+type Variant = "primary" | "secondary" | "ghost";
 
 type Props = {
   children: React.ReactNode;
@@ -15,47 +15,57 @@ type Props = {
   onClick?: () => void;
   type?: "button" | "submit";
   disabled?: boolean;
-  /** Show a trailing arrow that slides on hover. */
   arrow?: boolean;
-  /** Wrap in a magnetic pull (desktop). Default true. */
   magnetic?: boolean;
 };
 
-// Pill buttons (doc 02 §17): scale 1.02 on hover, 0.3s, with a sweeping fill.
-const base =
-  "group/btn relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-pill px-8 py-[15px] text-small font-medium tracking-wide transition-transform duration-300 ease-luxury hover:scale-[1.02] focus-visible:scale-[1.02] disabled:pointer-events-none disabled:opacity-50";
+const base = [
+  "group/btn relative inline-flex items-center justify-center gap-2",
+  "overflow-hidden rounded-pill",
+  "px-8 py-[14px]",
+  "text-[13px] font-medium tracking-[0.10em] uppercase",
+  "transition-transform duration-300 ease-luxury",
+  "hover:scale-[1.025] focus-visible:scale-[1.025]",
+  "disabled:pointer-events-none disabled:opacity-40",
+].join(" ");
 
 const variants: Record<Variant, string> = {
-  primary: "bg-[#f5f5f5] text-[#0b0b0b] shadow-sm",
-  secondary: "border border-white/25 bg-transparent text-text-primary",
+  primary:   "bg-[#f4f4f2] text-[#0b0b0b] shadow-sm",
+  secondary: "border border-white/20 bg-transparent text-text-primary",
+  ghost:     "bg-transparent text-text-secondary hover:text-text-primary",
 };
 
 function Inner({ children, arrow }: { children: React.ReactNode; arrow?: boolean }) {
   return (
-    <span className="relative z-10 inline-flex items-center gap-2">
+    <span className="relative z-10 inline-flex items-center gap-[10px]">
       {children}
       {arrow && (
         <ArrowRight
-          size={17}
-          className="transition-transform duration-300 ease-luxury group-hover/btn:translate-x-1"
+          size={15}
+          strokeWidth={1.6}
+          className="transition-transform duration-300 ease-luxury group-hover/btn:translate-x-[3px]"
         />
       )}
     </span>
   );
 }
 
-// Sweeping brown fill for secondary; brighten for primary.
-const Sweep = ({ variant }: { variant: Variant }) => (
-  <span
-    aria-hidden
-    className={cn(
-      "absolute inset-0 z-0 translate-y-full transition-transform duration-500 ease-luxury group-hover/btn:translate-y-0",
-      variant === "primary"
-        ? "bg-gradient-to-t from-[#e9dcc2] to-white"
-        : "bg-gradient-to-t from-brown/40 to-brown/10"
-    )}
-  />
-);
+/* Sweeping fill on hover — rises from below */
+function Sweep({ variant }: { variant: Variant }) {
+  if (variant === "ghost") return null;
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "absolute inset-0 z-0 translate-y-full",
+        "transition-transform duration-[520ms] ease-luxury group-hover/btn:translate-y-0",
+        variant === "primary"
+          ? "bg-gradient-to-t from-[#ece0c8] to-[#f8f6f2]"
+          : "bg-gradient-to-t from-brown/35 to-brown/10"
+      )}
+    />
+  );
+}
 
 export default function Button({
   children,
@@ -76,16 +86,11 @@ export default function Button({
       <Inner arrow={arrow}>{children}</Inner>
     </Link>
   ) : (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      className={classes}
-    >
+    <button type={type} onClick={onClick} disabled={disabled} className={classes}>
       <Sweep variant={variant} />
       <Inner arrow={arrow}>{children}</Inner>
     </button>
   );
 
-  return magnetic ? <Magnetic strength={0.25}>{content}</Magnetic> : content;
+  return magnetic ? <Magnetic strength={0.22}>{content}</Magnetic> : content;
 }

@@ -11,13 +11,13 @@ type Props = {
   intro?: string;
   align?: "left" | "center";
   className?: string;
-  /** Optional oversized index numeral (e.g. "01") for editorial rhythm. */
+  /** Oversized ghost index numeral for editorial rhythm — e.g. "01" */
   index?: string;
 };
 
 /**
- * Consistent, cinematic section header (doc 02 §33). The title uses a masked
- * split-line reveal; eyebrow + intro fade up in sequence.
+ * Consistent, cinematic section header (doc 02 §33).
+ * Title uses a masked split-line reveal; eyebrow and intro stagger behind it.
  */
 export default function SectionHeading({
   eyebrow,
@@ -30,22 +30,29 @@ export default function SectionHeading({
   return (
     <div
       className={cn(
-        "relative flex flex-col gap-5",
+        "relative flex flex-col gap-4",
         align === "center" && "items-center text-center",
         className
       )}
     >
+      {/* Ghost index numeral — purely decorative, very low opacity */}
       {index && (
         <span
           aria-hidden
-          className="pointer-events-none absolute -top-10 right-0 font-display text-[120px] leading-none text-white/[0.03] sm:text-[160px]"
+          className={cn(
+            "pointer-events-none absolute -top-8 font-display leading-none",
+            "text-[100px] sm:text-[140px]",
+            "text-white/[0.028]",
+            "select-none",
+            align === "center" ? "inset-x-0 text-center" : "right-0"
+          )}
         >
           {index}
         </span>
       )}
 
       {eyebrow && (
-        <Reveal y={16}>
+        <Reveal y={14}>
           <Eyebrow withRule={align === "left"}>{eyebrow}</Eyebrow>
         </Reveal>
       )}
@@ -53,16 +60,22 @@ export default function SectionHeading({
       <SplitText
         as="h2"
         type="lines"
-        className="max-w-[20ch] font-display text-[34px] font-semibold leading-[1.12] sm:text-[42px] lg:text-section"
+        className={cn(
+          "font-display font-semibold leading-[1.12]",
+          "text-[30px] sm:text-[38px] lg:text-section",
+          "max-w-[20ch]",
+          align === "center" && "mx-auto"
+        )}
       >
         {title}
       </SplitText>
 
       {intro && (
-        <Reveal y={22} delay={0.1}>
+        <Reveal y={20} delay={0.12}>
           <p
             className={cn(
-              "max-w-[52ch] text-body text-text-secondary",
+              "text-body text-text-secondary",
+              "max-w-[50ch]",
               align === "center" && "mx-auto"
             )}
           >

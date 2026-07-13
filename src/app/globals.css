@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* ============================================================
-   KK LEATHERS — GLOBAL DESIGN TOKENS (doc 02)
+   KK LEATHERS — GLOBAL DESIGN SYSTEM (doc 02)
    ============================================================ */
 :root {
   --color-base: #050505;
@@ -16,10 +16,12 @@
   --color-text: #f5f5f5;
   --color-text-secondary: #bdbdbd;
   --color-text-muted: #7a7a7a;
-
   --ease-luxury: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* ============================================================
+   BASE
+   ============================================================ */
 @layer base {
   * {
     box-sizing: border-box;
@@ -30,12 +32,10 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    overflow-x: clip; /* guard against stray parallax/inset overflow */
+    overflow-x: clip;
   }
 
   body {
-    /* Transparent so the continuous PageBackground gradient shows through.
-       Fallback colour prevents a flash before hydration. */
     background-color: var(--color-base);
     color: var(--color-text);
     font-family: var(--font-inter), sans-serif;
@@ -45,12 +45,16 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  h1,
-  h2,
-  h3,
-  h4 {
+  h1, h2, h3, h4 {
     font-family: var(--font-playfair), serif;
     letter-spacing: -0.01em;
+    /* Prevent awkward single-word last lines */
+    text-wrap: balance;
+  }
+
+  p {
+    /* Reduce orphaned words in prose */
+    text-wrap: pretty;
   }
 
   ::selection {
@@ -58,7 +62,7 @@
     color: var(--color-text);
   }
 
-  /* Elegant focus ring — accessibility (doc 02 §35) */
+  /* Elegant gold focus ring (doc 02 §35) */
   :focus-visible {
     outline: 2px solid var(--color-gold);
     outline-offset: 3px;
@@ -66,7 +70,13 @@
   }
 }
 
+/* ============================================================
+   COMPONENTS
+   ============================================================ */
 @layer components {
+
+  /* --- Centered max-width container (doc 02 §5) ---
+     Responsive gutters: 24px → 40px → 56px → 80px          */
   .container-luxury {
     width: 100%;
     max-width: 1400px;
@@ -74,59 +84,92 @@
     padding-inline: 24px;
   }
 
+  @media (min-width: 768px) {
+    .container-luxury { padding-inline: 40px; }
+  }
+
+  @media (min-width: 1280px) {
+    .container-luxury { padding-inline: 56px; }
+  }
+
   @media (min-width: 1920px) {
     .container-luxury {
       max-width: 1600px;
+      padding-inline: 80px;
     }
   }
 
-  /* Section vertical rhythm (doc 02 §8). Slightly tightened + overlapping soft
-     tones keep the page continuous rather than a stack of separate pages. */
+  /* --- Section vertical rhythm (doc 02 §8) ---
+     Mobile 72px / Tablet 96px / Desktop 120px — on spec.    */
   .section-pad {
-    padding-top: 64px;
-    padding-bottom: 64px;
+    padding-top: 72px;
+    padding-bottom: 72px;
   }
+
   @media (min-width: 768px) {
     .section-pad {
-      padding-top: 88px;
-      padding-bottom: 88px;
-    }
-  }
-  @media (min-width: 1024px) {
-    .section-pad {
-      padding-top: 108px;
-      padding-bottom: 108px;
+      padding-top: 96px;
+      padding-bottom: 96px;
     }
   }
 
-  /* Glass panel (doc 02 §23) — used sparingly */
+  @media (min-width: 1024px) {
+    .section-pad {
+      padding-top: 120px;
+      padding-bottom: 120px;
+    }
+  }
+
+  /* --- Glass panel (doc 02 §23) — use sparingly --- */
   .glass {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.035);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
+  /* --- Eyebrow kicker label (Manrope, gold, wide tracking) --- */
   .eyebrow {
     font-family: var(--font-manrope), sans-serif;
     text-transform: uppercase;
-    letter-spacing: 0.28em;
-    font-size: 13px;
+    letter-spacing: 0.30em;
+    font-size: 11px;
     font-weight: 500;
     color: var(--color-gold);
   }
 
-  /* Gradient text accent */
+  /* --- Gold gradient text accent --- */
   .text-gold-gradient {
-    background: linear-gradient(120deg, #e6cf9a 0%, #c8a45d 45%, #7b4a24 100%);
+    background: linear-gradient(118deg, #eddba8 0%, #c8a45d 48%, #9a6835 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
+
+  /* --- Product vitrine: dark pedestal for transparent PNGs ---
+     Used by ShoeSlot and wherever a product needs a showcase.  */
+  .product-vitrine {
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(110% 80% at 50% 14%, rgba(123, 74, 36, 0.20), transparent 62%),
+      linear-gradient(180deg, #141210 0%, #0c0b0a 100%);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 28px;
+    box-shadow:
+      0 4px 8px  rgba(0, 0, 0, 0.30),
+      0 16px 40px rgba(0, 0, 0, 0.40),
+      0 40px 80px rgba(0, 0, 0, 0.32),
+      inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  }
 }
 
+/* ============================================================
+   UTILITIES
+   ============================================================ */
 @layer utilities {
-  /* For split-type line reveal masking */
+
+  /* For SplitType line reveal masking */
   .line-mask {
     overflow: hidden;
     display: block;
@@ -137,84 +180,107 @@
     transform: translateY(24px);
   }
 
-  /* Layered depth: soft radial brown/gold ambience behind sections */
+  /* --- Ambient glow beds --- */
   .glow-brown {
     background: radial-gradient(
-      circle at center,
-      rgba(123, 74, 36, 0.22),
-      transparent 62%
-    );
-  }
-  .glow-gold {
-    background: radial-gradient(
-      circle at center,
-      rgba(200, 164, 93, 0.14),
-      transparent 60%
+      ellipse at center,
+      rgba(123, 74, 36, 0.30),
+      rgba(80,  45, 18, 0.10) 52%,
+      transparent 72%
     );
   }
 
-  /* Very soft film grain (doc 02 §29 — subtle noise) */
+  .glow-gold {
+    background: radial-gradient(
+      ellipse at center,
+      rgba(200, 164, 93, 0.20),
+      rgba(160, 120, 60, 0.06) 52%,
+      transparent 70%
+    );
+  }
+
+  /* --- Film grain (doc 02 §29) — finer noise, slightly lighter --- */
   .grain::after {
     content: "";
     position: absolute;
     inset: 0;
     pointer-events: none;
-    opacity: 0.035;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    z-index: 1;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     mix-blend-mode: overlay;
   }
 
-  /* Hairline top divider used between tonal sections */
+  /* --- Inset top hairline divider --- */
   .edge-top {
     box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
   }
+
+  /* --- Luxury layered shadow --- */
+  .shadow-luxury {
+    box-shadow:
+      0 2px 4px  rgba(0, 0, 0, 0.12),
+      0 8px 20px rgba(0, 0, 0, 0.24),
+      0 24px 56px rgba(0, 0, 0, 0.30);
+  }
+
+  /* --- Product presentation shadow (deeper) --- */
+  .shadow-product {
+    box-shadow:
+      0 4px 8px  rgba(0, 0, 0, 0.20),
+      0 16px 40px rgba(0, 0, 0, 0.36),
+      0 40px 80px rgba(0, 0, 0, 0.40);
+  }
 }
 
-/* Marquee for the manifesto strip */
+/* ============================================================
+   SHIMMER (VideoPlayer loading skeleton)
+   ============================================================ */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+/* ============================================================
+   MARQUEE (Manifesto strip)
+   ============================================================ */
 @keyframes marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-.animate-marquee {
-  animation: marquee 32s linear infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .animate-marquee {
-    animation: none;
-  }
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
 
-/* Reduced motion (doc 02 §35) */
+.animate-marquee {
+  animation: marquee 38s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
+  .animate-marquee { animation: none; }
+}
+
+/* ============================================================
+   REDUCED MOTION (doc 02 §35)
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:       0.001ms !important;
+    animation-iteration-count: 1      !important;
+    transition-duration:      0.001ms !important;
+    scroll-behavior: auto             !important;
   }
   .will-reveal {
-    opacity: 1 !important;
-    transform: none !important;
+    opacity: 1        !important;
+    transform: none   !important;
   }
 }
 
-/* Custom slim scrollbar */
-::-webkit-scrollbar {
-  width: 9px;
-}
-::-webkit-scrollbar-track {
-  background: #050505;
-}
+/* ============================================================
+   SCROLLBAR — slim, on-brand
+   ============================================================ */
+::-webkit-scrollbar       { width: 8px; }
+::-webkit-scrollbar-track { background: #020202; }
 ::-webkit-scrollbar-thumb {
-  background: #2a2320;
+  background: #1c1714;
   border-radius: 999px;
+  border: 2px solid #020202;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #7b4a24;
-}
+::-webkit-scrollbar-thumb:hover { background: #7b4a24; }

@@ -11,11 +11,10 @@ import CraftStepList from "./CraftStepList";
 import CraftGridFallback from "./CraftGridFallback";
 
 /**
- * Craftsmanship (doc 09 Phase 07 + Phase 15) — a pinned, scroll-driven story.
- * The stage (video + numeral) stays pinned while the six process steps advance;
- * the active step's film crossfades in and its copy highlights. Only the active
- * video plays, so CPU stays low (Phase 07 DoD). Reduced-motion / small screens
- * fall back to a clean stacked grid.
+ * Craftsmanship (doc 09 Phase 07 + Phase 15).
+ * Pinned on desktop: the stage (video + ghost numeral) stays fixed while
+ * six process steps advance via scroll. Only the active video plays.
+ * Mobile / reduced-motion: clean stacked grid fallback.
  */
 export default function Craftsmanship() {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -26,7 +25,6 @@ export default function Craftsmanship() {
     if (reduced) return;
     const el = rootRef.current;
     if (!el) return;
-    // Only run the pinned scene where there's room (lg+).
     const mq = window.matchMedia("(min-width: 1024px)");
     if (!mq.matches) return;
 
@@ -34,15 +32,12 @@ export default function Craftsmanship() {
       const steps = craftSteps.length;
       ScrollTrigger.create({
         trigger: el,
-        start: "top top",
-        end: () => `+=${steps * 60}%`,
-        pin: ".craft-pin",
-        scrub: true,
+        start:   "top top",
+        end:     () => `+=${steps * 65}%`,
+        pin:     ".craft-pin",
+        scrub:   true,
         onUpdate: (self) => {
-          const idx = Math.min(
-            steps - 1,
-            Math.floor(self.progress * steps)
-          );
+          const idx = Math.min(steps - 1, Math.floor(self.progress * steps));
           setActive((prev) => (prev === idx ? prev : idx));
         },
       });
@@ -54,11 +49,18 @@ export default function Craftsmanship() {
 
   return (
     <section id="craft" className="grain relative">
+      {/* Subtle vertical overlay to visually anchor this section */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(180deg,transparent,rgba(10,8,7,0.4)_20%,rgba(10,8,7,0.4)_80%,transparent)]"
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            "linear-gradient(180deg,transparent 0%,rgba(10,8,7,0.38) 15%,rgba(10,8,7,0.38) 85%,transparent 100%)",
+        }}
       />
-      <div className="container-luxury section-pad">
+
+      {/* Section header row */}
+      <div className="container-luxury section-pad pb-0">
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12">
           <div className="lg:col-span-8">
             <SectionHeading
@@ -68,12 +70,12 @@ export default function Craftsmanship() {
               intro="No machine shortcuts the process. Follow a single piece as it comes to life inside the atelier."
             />
           </div>
-          {/* The Oxford pauses here (stage 30), tilted as if under the maker's lamp */}
+          {/* Oxford pauses here under the maker's lamp */}
           <div className="lg:col-span-4">
             <ShoeSlot
               order={30}
               ratio="aspect-[4/3]"
-              pose={{ width: 300, rotation: -8, tiltX: 6, tiltY: 8, variant: "main", glow: 0.95 }}
+              pose={{ width: 300, rotation: -9, tiltX: 6, tiltY: 9, variant: "main", glow: 1.0 }}
               label="The Oxford under the maker's lamp"
               caption="Under the Lamp"
             />
@@ -81,26 +83,22 @@ export default function Craftsmanship() {
         </div>
       </div>
 
-      {/* Pinned cinematic scene (desktop) */}
-      <div ref={rootRef} className="relative hidden lg:block">
+      {/* Pinned cinematic scene (desktop only) */}
+      <div ref={rootRef} className="relative hidden pt-14 lg:block">
         <div className="craft-pin">
-          <div className="container-luxury grid grid-cols-12 items-center gap-12 pb-20">
+          <div className="container-luxury grid grid-cols-12 items-center gap-12 pb-24">
             <div className="col-span-7">
               <CraftStage steps={craftSteps} active={active} />
             </div>
             <div className="col-span-5">
-              <CraftStepList
-                steps={craftSteps}
-                active={active}
-                onSelect={setActive}
-              />
+              <CraftStepList steps={craftSteps} active={active} onSelect={setActive} />
             </div>
           </div>
         </div>
       </div>
 
       {/* Stacked fallback (mobile / tablet / reduced motion) */}
-      <div className="container-luxury pb-4 lg:hidden">
+      <div className="container-luxury pb-4 pt-12 lg:hidden">
         <CraftGridFallback steps={craftSteps} />
       </div>
     </section>

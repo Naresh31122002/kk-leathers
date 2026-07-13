@@ -8,57 +8,64 @@ import { images } from "@/lib/assets";
 import { useShoeStages, type ShoePose } from "./ShoeStageContext";
 
 const DEFAULT_POSE: Required<ShoePose> = {
-  width: 380,
+  width:    360,
   rotation: 0,
-  tiltX: 0,
-  tiltY: 0,
-  opacity: 1,
-  variant: "main",
-  glow: 0.6,
+  tiltX:    0,
+  tiltY:    0,
+  opacity:  1,
+  variant:  "main",
+  glow:     0.65,
 };
 
 /**
  * THE MAIN CHARACTER — ONE Oxford, ONE image, ONE master timeline.
  *
- * Rendered once as a fixed overlay and flown continuously between section
- * stage-anchors by a SINGLE ScrollTrigger (scrub) whose timeline is rebuilt
- * from measured anchor positions. Key correctness choices:
- *   • ONE image only (no variant swapping) — the SAME shoe the whole way, so it
- *     never looks like "a different shoe". Facing changes come from rotation/tilt.
- *   • It is ALWAYS on screen: vertically it is fixed to the viewport centre; only
- *     X, scale, rotation, tilt and (rarely) opacity change. It only fades where a
- *     stage explicitly asks (the closing gift box).
- *   • Works on laptops too (>=1024px), not just large screens.
- *   • scrub + invalidateOnRefresh + rebuild-on-refresh keep it synced at any
- *     scroll speed and after resize (requirements 1, 9, 11).
+ * Architectural principles:
+ *  • ONE fixed overlay, ONE <Image>, never swapped. Same shoe the whole way.
+ *  • Position is a Catmull-Rom motionPath through every registered stage anchor
+ *    so the shoe arcs naturally rather than sliding in straight lines.
+ *  • Pose changes (scale / rotation / tilt / opacity / glow) are segmented tweens
+ *    keyed to the same scroll fraction the motionPath reaches each anchor — so
+ *    the shoe always looks right when it arrives, not just mid-flight.
+ *  • A separate inner "breathing" layer (y float + micro-rotation) runs on top of
+ *    the scroll-driven transform without fighting it.
+ *  • Visibility is hard-gated: if opacity < 0.03 the overlay is display:none so
+ *    no glow / shadow bleeds through sections where the shoe must be absent.
+ *  • Only active on md+ (≥1024 px). Mobile / reduced-motion: null.
+ *  • invalidateOnRefresh + resize rebuild keep it synced after reflow.
  */
 export default function TravellingShoe() {
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const shoeRef = useRef<HTMLDivElement>(null);
-  const glowRef = useRef<HTMLDivElement>(null);
+  const wrapRef  = useRef<HTMLDivElement>(null);
+  const shoeRef  = useRef<HTMLDivElement>(null);
+  const glowRef  = useRef<HTMLDivElement>(null);
   const floatRef = useRef<HTMLDivElement>(null);
   const { getStages, version } = useShoeStages();
   const reduced = usePrefersReducedMotion();
 
   useEffect(() => {
     if (reduced) return;
-    const wrap = wrapRef.current;
-    const shoe = shoeRef.current;
-    const floatEl = floatRef.current;
-    if (!wrap || !shoe || !floatEl) return;
 
-    let master: gsap.core.Timeline | null = null;
+    const wrap  = wrapRef.current;
+    const shoe  = shoeRef.current;
+    const float = floatRef.current;
+    if (!wrap || !shoe || !float) return;
+
+    let master:   gsap.core.Timeline | null = null;
     let breathing: gsap.core.Timeline | null = null;
-    let st: ScrollTrigger | null = null;
+    let st:       ScrollTrigger | null = null;
     let raf = 0;
 
-    // Continuous life: breathing scale + float on an inner element, so it layers
-    // on top of the scroll-driven transform without fighting it (requirement 7).
-    breathing = gsap.timeline({ repeat: -1, yoyo: true, defaults: { ease: "sine.inOut" } });
+    /* ── Breathing life (inner layer — never fights the scroll tween) ── */
+    breathing = gsap.timeline({
+      repeat: -1,
+      yoyo: true,
+      defaults: { ease: "sine.inOut" },
+    });
     breathing
-      .to(floatEl, { y: -10, duration: 3.2 }, 0)
-      .to(floatEl, { rotation: 1.5, duration: 3.2 }, 0);
+      .to(float, { y: -12, duration: 3.4 }, 0)
+      .to(float, { rotation: 1.8, duration: 3.4 }, 0);
 
+    /* ── Build (or rebuild) the master scroll timeline ── */
     const build = () => {
       const stages = getStages();
       if (stages.length < 2) return;
@@ -66,114 +73,111 @@ export default function TravellingShoe() {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
 
-      // Resolve each stage to (a) the scroll position at which its anchor is
-      // centred in the viewport, and (b) the SCREEN point the shoe should hold
-      // then — taken from the anchor's own on-screen box, so the path naturally
-      // undulates in x AND y (the source of elegant curves, not straight slides).
+      /*
+       * For each stage, resolve:
+       *   scrollAt  — the document scroll position at which the anchor is
+       *               centred in the viewport.
+       *   cx / cy   — the SCREEN point the shoe centre should hold at that
+       *               scroll position (clamped to keep the shoe fully on screen).
+       */
       const resolved = stages.map((s) => {
-        const r = s.el.getBoundingClientRect();
-        const anchorCentreY = r.top + window.scrollY + r.height / 2;
-        const scrollAt = anchorCentreY - vh / 2;
-        const pose = { ...DEFAULT_POSE, ...s.pose };
-        const half = pose.width / 2;
-        // Where the anchor sits on screen WHEN it is centred (scrollTop=scrollAt):
-        // x is the anchor centre; y is its centre relative to the viewport.
-        const screenX = r.left + r.width / 2;
-        const screenY = r.top + window.scrollY + r.height / 2 - scrollAt;
-        // Keep the shoe fully on screen with a comfortable margin.
-        const cx = Math.min(vw - half - 16, Math.max(half + 16, screenX));
-        const cy = Math.min(vh - half - 16, Math.max(half + 16, screenY));
-        return { cx, cy, scrollY: scrollAt, pose };
+        const r  = s.el.getBoundingClientRect();
+        const anchorDocY  = r.top + window.scrollY + r.height / 2;
+        const scrollAt    = anchorDocY - vh / 2;
+        const pose        = { ...DEFAULT_POSE, ...s.pose };
+        const half        = pose.width / 2;
+        const margin      = 20;
+
+        // Screen X/Y when this anchor is centred (scrollTop === scrollAt).
+        const rawX = r.left + r.width  / 2;
+        const rawY = r.top  + window.scrollY + r.height / 2 - scrollAt;
+
+        const cx = Math.min(vw - half - margin, Math.max(half + margin, rawX));
+        const cy = Math.min(vh - half - margin, Math.max(half + margin, rawY));
+
+        return { cx, cy, scrollAt, pose };
       });
 
+      /* Kill previous animation before rebuilding */
       master?.kill();
       st?.kill();
 
       const first = resolved[0];
-      const last = resolved[resolved.length - 1];
-      const total = Math.max(1, last.scrollY - first.scrollY);
+      const last  = resolved[resolved.length - 1];
+      const total = Math.max(1, last.scrollAt - first.scrollAt);
 
-      // Prime the shoe at the first stage.
+      /* Prime the shoe at stage 0 */
       gsap.set(shoe, {
-        x: first.cx,
-        y: first.cy,
-        xPercent: -50,
-        yPercent: -50,
-        width: first.pose.width,
-        rotation: first.pose.rotation,
-        rotationX: first.pose.tiltX,
-        rotationY: first.pose.tiltY,
-        opacity: first.pose.opacity,
+        x:          first.cx,
+        y:          first.cy,
+        xPercent:   -50,
+        yPercent:   -50,
+        width:      first.pose.width,
+        rotation:   first.pose.rotation,
+        rotationX:  first.pose.tiltX,
+        rotationY:  first.pose.tiltY,
+        opacity:    first.pose.opacity ?? 1,
       });
-      gsap.set(glowRef.current, { opacity: first.pose.glow });
-      wrap.style.visibility = first.pose.opacity > 0.03 ? "visible" : "hidden";
+      gsap.set(glowRef.current, { opacity: first.pose.glow ?? DEFAULT_POSE.glow });
+
+      /* Initial visibility */
+      const startOpacity = first.pose.opacity ?? 1;
+      wrap.style.display = startOpacity > 0.03 ? "block" : "none";
 
       master = gsap.timeline({ defaults: { ease: "none" } });
 
-      // (1) Position — ONE smooth Catmull-Rom curve through every stage point, so
-      // the shoe arcs gracefully rather than snapping between straight segments.
-      const pathPoints = resolved.map((r) => ({ x: r.cx, y: r.cy }));
+      /* (A) Position — one smooth Catmull-Rom arc through all stage points */
       master.to(
         shoe,
         {
           motionPath: {
-            path: pathPoints,
-            curviness: 1.4,
+            path:       resolved.map((r) => ({ x: r.cx, y: r.cy })),
+            curviness:  1.2,   // reduced from 1.4 — still curves, not over-dramatic
             autoRotate: false,
           },
           duration: 1,
-          ease: "power1.inOut",
+          ease:     "power1.inOut",
         },
         0
       );
 
-      // (2) Pose (scale/rotation/tilt/opacity/glow) — segmented so each keys to
-      // the same scroll fraction the position reaches that stage at.
+      /* (B) Pose — segmented tweens keyed to the same scroll fractions */
       for (let i = 0; i < resolved.length - 1; i++) {
-        const a = resolved[i];
-        const b = resolved[i + 1];
-        const at = (a.scrollY - first.scrollY) / total;
-        const dur = Math.max(0.04, (b.scrollY - a.scrollY) / total);
+        const a   = resolved[i];
+        const b   = resolved[i + 1];
+        const at  = (a.scrollAt - first.scrollAt) / total;
+        const dur = Math.max(0.05, (b.scrollAt - a.scrollAt) / total);
+
         master.to(
           shoe,
           {
-            width: b.pose.width,
-            rotation: b.pose.rotation,
-            rotationX: b.pose.tiltX,
-            rotationY: b.pose.tiltY,
-            opacity: b.pose.opacity,
-            duration: dur,
-            ease: "power2.inOut",
+            width:     b.pose.width     ?? DEFAULT_POSE.width,
+            rotation:  b.pose.rotation  ?? DEFAULT_POSE.rotation,
+            rotationX: b.pose.tiltX     ?? DEFAULT_POSE.tiltX,
+            rotationY: b.pose.tiltY     ?? DEFAULT_POSE.tiltY,
+            opacity:   b.pose.opacity   ?? DEFAULT_POSE.opacity,
+            duration:  dur,
+            ease:      "power2.inOut",
           },
           at
         );
         master.to(
           glowRef.current,
-          { opacity: b.pose.glow, duration: dur },
+          { opacity: b.pose.glow ?? DEFAULT_POSE.glow, duration: dur },
           at
         );
       }
 
       st = ScrollTrigger.create({
         trigger: document.documentElement,
-        start: () => `${Math.max(0, first.scrollY)} top`,
-        end: () => `${last.scrollY} top`,
-        scrub: 1,
+        start:   () => `${Math.max(0, first.scrollAt)} top`,
+        end:     () => `${last.scrollAt} top`,
+        scrub:   1.2,          // slightly looser than 1 — feels more organic
         animation: master,
         invalidateOnRefresh: true,
         onUpdate: () => {
-          // Hard-gate the overlay: whenever the shoe body is effectively
-          // invisible, hide the whole wrapper so no glow/reflection bleeds
-          // through the sections where the shoe must be absent.
           const o = Number(gsap.getProperty(shoe, "opacity"));
-          const shouldShow = o > 0.03;
-          if (shouldShow) {
-            if (wrap.style.visibility === "hidden") {
-              wrap.style.visibility = "visible";
-            }
-          } else if (wrap.style.visibility !== "hidden") {
-            wrap.style.visibility = "hidden";
-          }
+          wrap.style.display = o > 0.03 ? "block" : "none";
         },
       });
     };
@@ -183,14 +187,12 @@ export default function TravellingShoe() {
       raf = requestAnimationFrame(build);
     };
 
-    // Build after fonts/images settle; rebuild on refresh + resize.
     kick();
     const onLoad = () => ScrollTrigger.refresh();
     window.addEventListener("load", onLoad);
     ScrollTrigger.addEventListener("refresh", build);
     window.addEventListener("resize", kick);
-    // Extra safety: re-measure a beat later (covers late media reflow).
-    const t = setTimeout(() => ScrollTrigger.refresh(), 1500);
+    const t = setTimeout(() => ScrollTrigger.refresh(), 1600);
 
     return () => {
       cancelAnimationFrame(raf);
@@ -211,6 +213,7 @@ export default function TravellingShoe() {
       ref={wrapRef}
       data-shoe="overlay"
       aria-hidden
+      // Hidden on mobile (< md = 1024 px); floating above the page on desktop.
       className="pointer-events-none fixed inset-0 z-[60] hidden md:block"
     >
       <div
@@ -219,26 +222,31 @@ export default function TravellingShoe() {
         className="absolute left-0 top-0 will-change-transform"
         style={{ transformStyle: "preserve-3d", perspective: 1400 }}
       >
-        {/* Glow bed + grounded contact shadow (luxury presentation, req 9) */}
+        {/* Ambient glow bed */}
         <div
           ref={glowRef}
-          className="glow-brown absolute inset-0 -z-10 scale-[1.5] blur-[80px]"
+          className="glow-brown absolute inset-0 -z-10 scale-[1.55] blur-[90px]"
         />
+
+        {/* Floating inner wrapper — breathing animation lives here */}
         <div
           ref={floatRef}
           className="relative aspect-square w-full will-change-transform"
         >
-          <div className="pointer-events-none absolute -bottom-[6%] left-1/2 h-[10%] w-[62%] -translate-x-1/2 rounded-[50%] bg-black/55 blur-2xl" />
+          {/* Grounded contact shadow */}
+          <div className="pointer-events-none absolute -bottom-[5%] left-1/2 h-[9%] w-[60%] -translate-x-1/2 rounded-[50%] bg-black/50 blur-[18px]" />
+
           <Image
             src={images.shoes.oxfordBrownMain}
             alt=""
             fill
             priority
-            sizes="480px"
-            className="object-contain drop-shadow-[0_45px_65px_rgba(0,0,0,0.7)]"
+            sizes="(max-width:1280px) 320px, 420px"
+            className="object-contain drop-shadow-[0_40px_64px_rgba(0,0,0,0.72)]"
           />
-          {/* Gold rim-light sweeping the leather — reflections (req 7) */}
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_32%_18%,rgba(200,164,93,0.18),transparent_46%)] mix-blend-screen" />
+
+          {/* Gold rim-light — subtle leather reflection */}
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(110%_70%_at_30%_16%,rgba(200,164,93,0.16),transparent_44%)] mix-blend-screen" />
         </div>
       </div>
     </div>

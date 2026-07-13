@@ -8,22 +8,17 @@ import { cn } from "@/lib/cn";
 type Props = {
   children: React.ReactNode;
   className?: string;
-  /** Positive = moves up as you scroll down; negative = down. Pixels. */
+  /** Pixels of upward travel as element scrolls past. Positive = moves up. */
   speed?: number;
   scale?: number;
 };
 
 /**
- * Scroll-scrubbed parallax layer for cinematic depth (doc 09 Phase 15 Parallax).
- * Movement is subtle and eased — never jerky (doc 02 §27).
+ * Scroll-scrubbed parallax layer (doc 09 Phase 15 Parallax).
+ * Subtle depth — never jerky. Background layers should move less than foreground.
  */
-export default function Parallax({
-  children,
-  className,
-  speed = 80,
-  scale,
-}: Props) {
-  const ref = useRef<HTMLDivElement>(null);
+export default function Parallax({ children, className, speed = 70, scale }: Props) {
+  const ref    = useRef<HTMLDivElement>(null);
   const reduced = usePrefersReducedMotion();
 
   useEffect(() => {
@@ -36,13 +31,13 @@ export default function Parallax({
         { yPercent: 0, scale: scale ? 1 : undefined },
         {
           yPercent: (-speed / el.offsetHeight) * 100,
-          scale: scale,
+          scale,
           ease: "none",
           scrollTrigger: {
             trigger: el,
-            start: "top bottom",
-            end: "bottom top",
-            scrub: 1,
+            start:   "top bottom",
+            end:     "bottom top",
+            scrub:   1.0,
           },
         }
       );

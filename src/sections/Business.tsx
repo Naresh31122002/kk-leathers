@@ -17,20 +17,24 @@ const features = [
   "Padded device compartment",
   "Hand-stitched handles",
   "Ages into a personal patina",
-];
+] as const;
 
 /**
- * Business collection (doc 09 Phase 08) — the laptop bag for the professional,
- * with the duffle rotation film as a layered, parallaxed secondary media beat.
+ * Business collection (doc 09 Phase 08).
+ * Laptop bag video as primary media. Duffle bag as parallaxed inset.
+ * The shoe intentionally does NOT appear here — the bags lead.
  */
 export default function Business() {
   return (
     <Section id="business" className="grain overflow-hidden">
-      <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
+      <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-20">
+
         {/* Media stack */}
         <div className="relative order-2 lg:order-1">
-          <div className="glow-gold pointer-events-none absolute inset-0 -z-10 scale-110 blur-2xl" />
-          <MediaFrame ratio="aspect-[16/12]" scrim>
+          {/* Ambient glow */}
+          <div className="glow-gold pointer-events-none absolute inset-0 -z-10 scale-110 blur-[80px] opacity-70" />
+
+          <MediaFrame ratio="aspect-[16/11]" scrim>
             <VideoPlayer
               src={videos.hero.laptopReveal}
               ariaLabel="Leather laptop bag reveal"
@@ -39,35 +43,44 @@ export default function Business() {
             />
           </MediaFrame>
 
-          {/* Parallax duffle inset — travel companion cross-sell (still image,
-              not another product film). */}
-          <Parallax speed={50} className="absolute -bottom-8 -left-3 w-[38%] max-w-[200px] sm:-left-8">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-video border border-white/10 bg-secondary shadow-lg">
+          {/* Parallaxed duffle inset — cross-sell still, not another video */}
+          <Parallax
+            speed={44}
+            className="absolute -bottom-8 -left-4 w-[36%] max-w-[190px] sm:-left-10"
+          >
+            <div
+              className="relative aspect-[4/5] overflow-hidden rounded-video
+                border border-white/[0.09]
+                bg-surface
+                shadow-[0_8px_24px_rgba(0,0,0,.34)]"
+            >
               <Image
                 src={images.bags.duffle}
                 alt="Brown leather duffle travel bag"
                 fill
-                sizes="200px"
+                sizes="190px"
                 className="object-contain p-4"
               />
             </div>
           </Parallax>
         </div>
 
-        {/* Copy — the shoe intentionally does NOT appear here; the bags lead. */}
+        {/* Copy */}
         <div className="relative order-1 lg:order-2">
-          <Reveal y={16} className="mb-5">
+          <Reveal y={14} className="mb-5">
             <Eyebrow>For the Professional</Eyebrow>
           </Reveal>
+
           <SplitText
             as="h2"
             type="lines"
-            className="max-w-[16ch] font-display text-[34px] font-semibold leading-[1.15] sm:text-[42px] lg:text-section"
+            className="max-w-[16ch] font-display text-[30px] font-semibold leading-[1.14] sm:text-[38px] lg:text-section"
           >
             The bag that carries your day
           </SplitText>
-          <Reveal y={20} delay={0.1}>
-            <p className="mt-6 max-w-[48ch] text-body text-text-secondary">
+
+          <Reveal y={18} delay={0.1}>
+            <p className="mt-6 max-w-[46ch] text-body text-text-secondary">
               A structured leather laptop bag built for the boardroom and the
               commute alike — padded, quietly luxurious, made to soften with every
               year of use.
@@ -76,12 +89,12 @@ export default function Business() {
 
           <StaggerGroup
             stagger={0.08}
-            className="mt-8 grid grid-cols-1 gap-3 text-small text-text-secondary sm:grid-cols-2"
+            className="mt-8 grid grid-cols-1 gap-[10px] sm:grid-cols-2"
           >
             {features.map((f) => (
-              <StaggerItem key={f} y={16}>
-                <span className="flex items-center gap-3">
-                  <span className="h-[6px] w-[6px] rounded-full bg-gold" />
+              <StaggerItem key={f} y={14}>
+                <span className="flex items-center gap-3 text-small text-text-secondary">
+                  <span className="h-[5px] w-[5px] flex-shrink-0 rounded-full bg-gold" />
                   {f}
                 </span>
               </StaggerItem>

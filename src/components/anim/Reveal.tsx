@@ -8,6 +8,7 @@ type Props = {
   children: React.ReactNode;
   as?: ElementType;
   className?: string;
+  /** Initial vertical offset in px — lower is subtler. Default 28. */
   y?: number;
   delay?: number;
   duration?: number;
@@ -16,21 +17,22 @@ type Props = {
 };
 
 /**
- * Reusable Framer Motion in-view reveal (doc 09 Phase 01 framer-motion use).
- * Honors reduced motion. Use for non-scrubbed, one-shot element reveals.
+ * Framer Motion in-view reveal (doc 09 Phase 01).
+ * Uses the luxury cubic-bezier from the design system for consistent easing.
+ * Reduced motion: fades only, no translation.
  */
 export default function Reveal({
   children,
   as = "div",
   className,
-  y = 28,
+  y = 26,
   delay = 0,
-  duration = 0.9,
+  duration = 0.85,
   once = true,
-  amount = 0.35,
+  amount = 0.30,
 }: Props) {
-  const reduced = useReducedMotion();
-  const MotionTag = motion(as as ElementType);
+  const reduced  = useReducedMotion();
+  const MotionEl = motion(as as ElementType);
 
   const variants: Variants = {
     hidden: { opacity: 0, y: reduced ? 0 : y },
@@ -42,7 +44,7 @@ export default function Reveal({
   };
 
   return (
-    <MotionTag
+    <MotionEl
       className={cn(className)}
       variants={variants}
       initial="hidden"
@@ -50,6 +52,6 @@ export default function Reveal({
       viewport={{ once, amount }}
     >
       {children}
-    </MotionTag>
+    </MotionEl>
   );
 }

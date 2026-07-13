@@ -1,6 +1,9 @@
 import { cn } from "@/lib/cn";
 
-// Gold kicker label with a leading rule — a recurring luxury signature.
+/**
+ * Gold kicker label — the recurring luxury eyebrow signature.
+ * Uses a thin leading rule (optional) to anchor the text visually.
+ */
 export default function Eyebrow({
   children,
   className,
@@ -11,9 +14,9 @@ export default function Eyebrow({
   withRule?: boolean;
 }) {
   return (
-    <span className={cn("inline-flex items-center gap-3", className)}>
+    <span className={cn("inline-flex items-center gap-[10px]", className)}>
       {withRule && (
-        <span className="h-px w-8 bg-gradient-to-r from-transparent to-gold/70" />
+        <span className="block h-px w-6 flex-shrink-0 bg-gradient-to-r from-transparent via-gold/60 to-gold/90" />
       )}
       <span className="eyebrow">{children}</span>
     </span>

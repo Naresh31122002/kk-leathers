@@ -7,9 +7,9 @@ import MediaFrame from "@/components/ui/MediaFrame";
 type Step = { id: string; step: string; title: string; video: string };
 
 /**
- * The pinned stage: a stack of process films that crossfade as `active` changes.
- * Only the active <video> plays; the rest are paused to save CPU. A large ghost
- * numeral gives the scene editorial weight.
+ * Pinned craft stage: stacked process films that crossfade as `active` changes.
+ * Only the active <video> plays; the rest are paused to protect CPU.
+ * A ghost step numeral gives editorial weight; caption labels the active step.
  */
 export default function CraftStage({
   steps,
@@ -33,11 +33,10 @@ export default function CraftStage({
       {steps.map((s, i) => (
         <video
           key={s.id}
-          ref={(el) => {
-            refs.current[i] = el;
-          }}
+          ref={(el) => { refs.current[i] = el; }}
           className={cn(
-            "absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ease-luxury",
+            "absolute inset-0 h-full w-full object-cover",
+            "transition-opacity duration-700 ease-luxury",
             i === active ? "opacity-100" : "opacity-0"
           )}
           src={s.video}
@@ -50,13 +49,15 @@ export default function CraftStage({
         />
       ))}
 
-      {/* Ghost numeral + active caption */}
-      <span className="pointer-events-none absolute left-6 top-4 z-10 font-display text-[92px] font-semibold leading-none text-white/10">
+      {/* Ghost step numeral */}
+      <span className="pointer-events-none absolute left-6 top-4 z-10 font-display text-[88px] font-semibold leading-none text-white/[0.08] select-none">
         {steps[active].step}
       </span>
+
+      {/* Active step caption */}
       <div className="absolute bottom-6 left-6 z-10">
-        <p className="eyebrow mb-1 text-[11px]">In the Atelier</p>
-        <p className="font-display text-subheading text-text-primary">
+        <p className="eyebrow mb-1 text-[9px] tracking-[0.26em]">In the Atelier</p>
+        <p className="font-display text-[26px] font-semibold text-text-primary">
           {steps[active].title}
         </p>
       </div>

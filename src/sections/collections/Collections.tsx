@@ -7,16 +7,11 @@ import ShoeSlot from "@/components/shoe/ShoeSlot";
 import { collections } from "@/lib/content";
 import CollectionCard from "./CollectionCard";
 
-/**
- * Featured collections (doc 09 Phase 06). The travelling Oxford arrives here
- * (stage 20) beside the heading — presented as a pair, turned to show its
- * profile — before the bento grid of the wider family reveals below.
- */
 export default function Collections() {
   return (
     <Section id="collections" tone="raised" className="grain">
-      {/* Intro row — heading + the shoe's landing slot */}
-      <div className="mb-16 grid grid-cols-1 items-center gap-10 lg:grid-cols-12">
+      {/* Intro row — heading + the Oxford's profile stage */}
+      <div className="mb-14 grid grid-cols-1 items-center gap-10 lg:grid-cols-12">
         <div className="lg:col-span-7">
           <SectionHeading
             index="01"
@@ -29,16 +24,17 @@ export default function Collections() {
           <ShoeSlot
             order={20}
             ratio="aspect-[4/3]"
-            pose={{ width: 320, rotation: 4, tiltY: -12, variant: "side", glow: 0.7 }}
+            pose={{ width: 320, rotation: 4, tiltY: -14, variant: "side", glow: 0.75 }}
             label="The Oxford, presented in profile"
             caption="The Signature Oxford"
           />
         </div>
       </div>
 
+      {/* Bento grid — 4 columns on desktop */}
       <StaggerGroup
-        stagger={0.1}
-        className="grid auto-rows-[240px] grid-cols-1 gap-5 sm:auto-rows-[260px] sm:grid-cols-2 lg:grid-cols-4"
+        stagger={0.09}
+        className="grid auto-rows-[220px] grid-cols-1 gap-4 sm:auto-rows-[240px] sm:grid-cols-2 lg:auto-rows-[250px] lg:grid-cols-4"
       >
         {collections.map((c) => (
           <CollectionCard key={c.id} c={c} />
